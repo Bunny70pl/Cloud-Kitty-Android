@@ -26,8 +26,8 @@ public class Player {
         y += velocityY;
 
         // Ruch poziomy
-        if (movingLeft) x -= 10;
-        if (movingRight) x += 10;
+        if (movingLeft) x -= 15;
+        if (movingRight) x += 15;
 
         // Granice ekranu
         if (x < 0) x = 0;
@@ -36,7 +36,7 @@ public class Player {
         // Kolizje z platformami
         for (Platform p : platforms) {
             if (isLandingOn(p)) {
-                velocityY = -45; // skok
+                velocityY = -57; // skok
                 y = p.getY() - bitmap.getHeight(); // ustaw dokładnie na platformie
                 break;
             }

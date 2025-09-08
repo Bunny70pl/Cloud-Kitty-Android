@@ -17,6 +17,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Random random;
     private int screenHeight, screenWidth;
 
+    private float worldOffset = 0;       // przesunięcie świata w górę
+    private float maxWorldOffset = 0;    // najwyższe osiągnięcie
+    private int score = 0;               // aktualny wynik
+
     public GameView(Context context) {
         super(context);
         getHolder().addCallback(this);
@@ -39,6 +43,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
         screenHeight = getHeight();
         screenWidth = getWidth();
+        worldOffset = 0;
+        maxWorldOffset = 0;
+        score = 0;
         thread.setRunning(true);
         thread.start();
     }
@@ -71,21 +78,30 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         player.draw(canvas);
 
-      }
+        // Rysowanie wyniku
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(64);
+        textPaint.setAntiAlias(true);
+        canvas.drawText("Score: " + score, 50, 100, textPaint);
+    }
 
     public void update() {
         player.update(platforms, screenHeight, screenWidth);
 
         float upperThreshold = screenHeight / 3f;
         float lowerThreshold = screenHeight * 2f / 3f;
+        float diff = 0;
 
         if (player.getY() < upperThreshold) {
-            float diff = upperThreshold - player.getY();
+            diff = upperThreshold - player.getY();
             player.setY(upperThreshold);
 
             for (Platform p : platforms) {
                 p.setY(p.getY() + diff);
             }
+
+            worldOffset += diff;
 
             float minY = Float.MAX_VALUE;
             for (Platform p : platforms) {
@@ -94,18 +110,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             while (minY > -500) {
                 float newX = random.nextInt(screenWidth - 300);
-                float newY = minY - 500;//wiekszy odstep
+                float newY = minY - 500;
                 platforms.add(new Platform(getContext(), newX, newY));
                 minY = newY;
             }
+
         } else if (player.getY() > lowerThreshold) {
-            float diff = player.getY() - lowerThreshold;
+            diff = player.getY() - lowerThreshold;
             player.setY(lowerThreshold);
 
             for (Platform p : platforms) {
                 p.setY(p.getY() - diff);
             }
         }
+
+        // Aktualizacja punktów
+        if (worldOffset > maxWorldOffset) maxWorldOffset = worldOffset;
+        score = (int) maxWorldOffset / 10;
     }
 
     // publiczne metody do sterowania

@@ -17,9 +17,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Random random;
     private int screenHeight, screenWidth;
 
-    private float worldOffset = 0;       // przesunięcie świata w górę
-    private float maxWorldOffset = 0;    // najwyższe osiągnięcie
-    private int score = 0;               // aktualny wynik
+    private float worldOffset = 0;
+    private float maxWorldOffset = 0;
+    private int score = 0;
+    private int groundHeight = 120;
 
     public GameView(Context context) {
         super(context);
@@ -32,9 +33,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         screenHeight = 1920;
         screenWidth = 1080;
 
+        // Początkowe platformy
         for (int i = 1; i < 7; i++) {
-            platforms.add(new Platform(context, random.nextInt(900), 1800 - i * 400));
+            int type = random.nextInt(4); // NORMAL, MOVING, SPRING, BREAKABLE
+            platforms.add(new Platform(context, random.nextInt(screenWidth - 200), 1800 - i * 400, 200, 60, type, false));
         }
+
+        // Stała ziemia
         platforms.add(new Platform(context, 0, screenHeight - 120, screenWidth, 120));
         setFocusable(true);
     }
@@ -52,18 +57,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
         thread.setRunning(false);
         while (retry) {
-            try {
-                thread.join();
-                retry = false;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            try { thread.join(); retry = false; } catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
 
@@ -72,13 +71,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
         canvas.drawColor(Color.rgb(135, 206, 250));
 
-        for (Platform p : platforms) {
-            p.draw(canvas);
-        }
-
+        for (Platform p : platforms) p.draw(canvas);
         player.draw(canvas);
 
-        // Rysowanie wyniku
         Paint textPaint = new Paint();
         textPaint.setColor(Color.BLACK);
         textPaint.setTextSize(64);
@@ -91,27 +86,34 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         float upperThreshold = screenHeight / 3f;
         float lowerThreshold = screenHeight * 2f / 3f;
-        float diff = 0;
+        float diff;
+
+        // Aktualizacja platform
+        for (Platform p : platforms) p.update(screenWidth);
 
         if (player.getY() < upperThreshold) {
             diff = upperThreshold - player.getY();
             player.setY(upperThreshold);
 
+            // Przesuwamy tylko platformy, które nie są ziemią
             for (Platform p : platforms) {
-                p.setY(p.getY() + diff);
+                if (!p.isGround()) {
+                    p.setY(p.getY() + diff);
+                }
             }
 
             worldOffset += diff;
 
             float minY = Float.MAX_VALUE;
             for (Platform p : platforms) {
-                if (p.getY() < minY) minY = p.getY();
+                if (!p.isGround() && p.getY() < minY) minY = p.getY();
             }
 
             while (minY > -500) {
-                float newX = random.nextInt(screenWidth - 300);
-                float newY = minY - 500;
-                platforms.add(new Platform(getContext(), newX, newY));
+                int type = random.nextInt(4);
+                float newX = random.nextInt(screenWidth - 200);
+                float newY = minY - (random.nextInt(  700) + 300);
+                platforms.add(new Platform(getContext(), newX, newY, 200, 60, type, false));
                 minY = newY;
             }
 
@@ -120,7 +122,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             player.setY(lowerThreshold);
 
             for (Platform p : platforms) {
-                p.setY(p.getY() - diff);
+                if (!p.isGround()) {
+                    p.setY(p.getY() - diff);
+                }
             }
         }
 
@@ -129,12 +133,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         score = (int) maxWorldOffset / 10;
     }
 
-    // publiczne metody do sterowania
-    public void movePlayerLeft(boolean moving) {
-        player.setMovingLeft(moving);
-    }
 
-    public void movePlayerRight(boolean moving) {
-        player.setMovingRight(moving);
-    }
+    public void movePlayerLeft(boolean moving) { player.setMovingLeft(moving); }
+    public void movePlayerRight(boolean moving) { player.setMovingRight(moving); }
 }

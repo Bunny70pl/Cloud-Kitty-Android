@@ -5,17 +5,15 @@ import android.view.SurfaceHolder;
 
 public class GameThread extends Thread {
     private boolean running;
-    private SurfaceHolder holder;
-    private GameView gameView;
+    private final SurfaceHolder holder;
+    private final GameView gameView;
 
     public GameThread(SurfaceHolder holder, GameView view) {
         this.holder = holder;
         this.gameView = view;
     }
 
-    public void setRunning(boolean running) {
-        this.running = running;
-    }
+    public void setRunning(boolean running) { this.running = running; }
 
     @Override
     public void run() {
@@ -23,21 +21,17 @@ public class GameThread extends Thread {
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
-                synchronized (holder) {
-                    gameView.update();
-                    gameView.draw(canvas);
+                if (canvas != null) {
+                    synchronized (holder) {
+                        gameView.update();
+                        gameView.draw(canvas);
+                    }
                 }
             } finally {
-                if (canvas != null) {
-                    holder.unlockCanvasAndPost(canvas);
-                }
+                if (canvas != null) holder.unlockCanvasAndPost(canvas);
             }
 
-            try {
-                sleep(16); // ~60 FPS
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            try { sleep(16); } catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
 }

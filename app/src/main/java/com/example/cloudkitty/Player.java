@@ -22,73 +22,52 @@ public class Player {
     }
 
     public void update(ArrayList<Platform> platforms, int screenHeight, int screenWidth) {
-        velocityY += 1.5f; // grawitacja
+        velocityY += 1.5f;
         y += velocityY;
 
-        // Ruch poziomy
         if (movingLeft) x -= 15;
         if (movingRight) x += 15;
 
-        // Granice ekranu
         if (x < 0) x = 0;
         if (x > screenWidth - bitmap.getWidth()) x = screenWidth - bitmap.getWidth();
 
-        // Kolizje z platformami
         for (Platform p : platforms) {
             if (isLandingOn(p)) {
-                velocityY = -57; // skok
-                y = p.getY() - bitmap.getHeight(); // ustaw dokładnie na platformie
+                velocityY = -57;
+                y = p.getY() - bitmap.getHeight();
+
+                if (p.getType() == Platform.SPRING) velocityY = -100;
+                if (p.getType() == Platform.BREAKABLE) p.destroy();
+
                 break;
             }
         }
 
-        // Nie spadaj poniżej ziemi
         if (y > screenHeight - bitmap.getHeight()) {
             y = screenHeight - bitmap.getHeight();
             velocityY = 0;
         }
     }
-    private boolean isLandingOn(Platform p) {
+
+    public boolean isLandingOn(Platform p) {
         Rect playerRect = getRect();
         Rect platRect = p.getRect();
-
-        // kot musi być **nad platformą w poprzednim kroku**
         boolean falling = velocityY > 0;
-
-        // poziomy zasięg
         boolean horizontallyOverlaps = playerRect.right > platRect.left && playerRect.left < platRect.right;
-
-        // pionowy kontakt od góry platformy
         boolean verticallyTouching = playerRect.bottom >= platRect.top && playerRect.bottom - velocityY < platRect.top;
-
-        return falling && horizontallyOverlaps && verticallyTouching;
+        return falling && horizontallyOverlaps && verticallyTouching && p.isVisible();
     }
 
     public void draw(Canvas canvas) {
         canvas.drawBitmap(bitmap, x, y, null);
     }
 
-    private boolean collidesWith(Platform p) {
-        return Rect.intersects(getRect(), p.getRect());
-    }
-
     private Rect getRect() {
         return new Rect((int)x, (int)y, (int)x + bitmap.getWidth(), (int)y + bitmap.getHeight());
     }
 
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
-    }
-
-    public void setMovingLeft(boolean left) {
-        this.movingLeft = left;
-    }
-
-    public void setMovingRight(boolean right) {
-        this.movingRight = right;
-    }
+    public float getY() { return y; }
+    public void setY(float y) { this.y = y; }
+    public void setMovingLeft(boolean movingLeft) { this.movingLeft = movingLeft; }
+    public void setMovingRight(boolean movingRight) { this.movingRight = movingRight; }
 }

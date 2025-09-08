@@ -7,40 +7,87 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 
 public class Platform {
+    public static final int NORMAL = 0;
+    public static final int MOVING = 1;
+    public static final int SPRING = 2;
+    public static final int BREAKABLE = 3;
+
+    public static final long RESPAWN_TIME = 10000; // 10 sekund
+
     private Bitmap bitmap;
     private float x, y;
+    private int type;
+    private int width, height;
+    private boolean visible = true;
+    private boolean isGround = false;
+    private float direction = 1; // dla MOVING
 
-    public Platform(Context context, float x, float y) {
-        this.bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.cloud);
-        this.x = x;
-        this.y = y;
-    }
+    private long destroyedAt = 0;
+
     public Platform(Context context, float x, float y, int width, int height) {
+        this(x, y, width, height, NORMAL, false, context);
+    }
+
+    public Platform(Context context, float x, float y, int width, int height, int type, boolean isGround) {
+        this(x, y, width, height, type, isGround, context);
+    }
+
+    private Platform(float x, float y, int width, int height, int type, boolean isGround, Context context) {
         this.x = x;
         this.y = y;
+        this.width = width;
+        this.height = height;
+        this.type = type;
+        this.isGround = isGround;
 
-        // Tworzymy prostokątną bitmapę na podaną szerokość i wysokość
-        Bitmap original = BitmapFactory.decodeResource(context.getResources(), R.drawable.cloud);
+        int resId;
+        switch (type) {
+            case MOVING: resId = R.drawable.cloud_moving; break;
+            case SPRING: resId = R.drawable.cloud_spring; break;
+            case BREAKABLE: resId = R.drawable.cloud_breakable; break;
+            default: resId = R.drawable.cloud; break;
+        }
+
+        Bitmap original = BitmapFactory.decodeResource(context.getResources(), resId);
         this.bitmap = Bitmap.createScaledBitmap(original, width, height, false);
     }
 
+    public void update(int screenWidth) {
+        if (!visible && type == BREAKABLE) {
+            if (System.currentTimeMillis() - destroyedAt >= RESPAWN_TIME) {
+                visible = true;
+            }
+        }
+
+        if (type == MOVING && visible) {
+            x += 5 * direction;
+            if (x < 0 || x + width > screenWidth) direction *= -1;
+        }
+    }
+
     public void draw(Canvas canvas) {
-        canvas.drawBitmap(bitmap, x, y, null);
+        if (visible) canvas.drawBitmap(bitmap, x, y, null);
     }
 
     public Rect getRect() {
-        return new Rect((int)x, (int)y, (int)x + bitmap.getWidth(), (int)y + bitmap.getHeight());
+        return new Rect((int)x, (int)y, (int)x + width, (int)y + height);
     }
 
-    public float getY() {
-        return y;
+    public void destroy() {
+        visible = false;
+        destroyedAt = System.currentTimeMillis();
     }
 
-    public void setY(float newY) {
-        this.y = newY;
+    public void respawn() {
+        visible = true;
+        destroyedAt = 0;
     }
 
-    public float getX() {
-        return x;
-    }
+    public int getType() { return type; }
+    public boolean isVisible() { return visible; }
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public void setY(float y) { this.y = y; }
+    public boolean isGround() { return isGround; }
+    public long getDestroyedAt() { return destroyedAt; }
 }

@@ -16,10 +16,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private ArrayList<Platform> platforms;
     private Random random;
     private int screenHeight, screenWidth;
-
-    private float worldOffset = 0;       // aktualna wysokość
-    private float maxWorldOffset = 0;    // najwyższa osiągnięta wysokość
-    private float checkpointOffset = 0;  // ostatni checkpoint (przy spadku)
     private int score = 0;
 
     public GameView(Context context) {
@@ -33,16 +29,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         screenHeight = 1920;
         screenWidth = 1080;
 
-        // Początkowe platformy
         for (int i = 1; i < 7; i++) {
-            int type = random.nextInt(4); // NORMAL, MOVING, SPRING, BREAKABLE
+            int type = random.nextInt(4);
             platforms.add(new Platform(context,
                     random.nextInt(screenWidth - 200),
                     1800 - i * 400,
                     200, 60, type, false));
         }
 
-        // Stała ziemia
         platforms.add(new Platform(context, 0, screenHeight - 120, screenWidth, 120));
         setFocusable(true);
     }
@@ -51,9 +45,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
         screenHeight = getHeight();
         screenWidth = getWidth();
-        worldOffset = 0;
-        maxWorldOffset = 0;
-        checkpointOffset = 0;
         score = 0;
         thread.setRunning(true);
         thread.start();
@@ -70,9 +61,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             try {
                 thread.join();
                 retry = false;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
 
@@ -98,59 +87,43 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         float lowerThreshold = screenHeight * 2f / 3f;
         float diff;
 
-        // Aktualizacja platform
         for (Platform p : platforms) p.update(screenWidth);
 
         if (player.getY() < upperThreshold) {
             diff = upperThreshold - player.getY();
             player.setY(upperThreshold);
-
-            // Przesuwamy tylko platformy, które nie są ziemią
             for (Platform p : platforms) {
-                if (!p.isGround()) {
-                    p.setY(p.getY() + diff);
-                }
+                if (!p.isGround()) p.setY(p.getY() + diff);
             }
-
-            // Dodajemy do worldOffset tylko przy wznoszeniu się
-            worldOffset += diff;
-
-            // Aktualizacja platform w górę
-            float minY = Float.MAX_VALUE;
-            for (Platform p : platforms) {
-                if (!p.isGround() && p.getY() < minY) minY = p.getY();
-            }
-
-            while (minY > -500) {
-                int type = random.nextInt(4);
-                float newX = random.nextInt(screenWidth - 200);
-                float newY = minY - (random.nextInt(700) + 300);
-                platforms.add(new Platform(getContext(), newX, newY, 100, 60, type, false));
-                minY = newY;
-            }
-
-            // --- NOWA LOGIKA PUNKTÓW ---
-            // Dodajemy punkty tylko jeśli idziemy wyżej niż maxWorldOffset
-            if (worldOffset > maxWorldOffset) {
-                score += (int) ((worldOffset - maxWorldOffset) / 10); // tylko przy wznoszeniu
-                maxWorldOffset = worldOffset;
-            }
-
         } else if (player.getY() > lowerThreshold) {
             diff = player.getY() - lowerThreshold;
             player.setY(lowerThreshold);
-
             for (Platform p : platforms) {
-                if (!p.isGround()) {
-                    p.setY(p.getY() - diff);
-                }
+                if (!p.isGround()) p.setY(p.getY() - diff);
             }
+        }
 
-            // Przy spadku nie zmieniamy punktów ani maxWorldOffset
+        float minY = Float.MAX_VALUE;
+        for (Platform p : platforms) {
+            if (!p.isGround() && p.getY() < minY) minY = p.getY();
+        }
+
+        while (minY > -500) {
+            int type = random.nextInt(4);
+            float newX = random.nextInt(screenWidth - 200);
+            float newY = minY - (random.nextInt(700) + 300);
+            platforms.add(new Platform(getContext(), newX, newY, 150, 60, type, false));
+            minY = newY;
+        }
+
+        // Punktacja: każda platforma przeskoczona w pionie
+        for (Platform p : platforms) {
+            if (!p.isPassed() && player.getY() + 100 < p.getY()) { // 100 = przybliżona wysokość gracza
+                score += 10;
+                p.setPassed(true);
+            }
         }
     }
-
-
 
     public void movePlayerLeft(boolean moving) { player.setMovingLeft(moving); }
     public void movePlayerRight(boolean moving) { player.setMovingRight(moving); }

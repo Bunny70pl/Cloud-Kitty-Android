@@ -58,6 +58,11 @@ public class Player {
         return falling && horizontallyOverlaps && verticallyTouching && p.isVisible();
     }
 
+    public boolean isStandingOn(Platform p) {
+        Rect playerRect = new Rect((int)x, (int)(y + bitmap.getHeight()), (int)(x + bitmap.getWidth()), (int)(y + bitmap.getHeight() + 5));
+        return p.isVisible() && Rect.intersects(playerRect, p.getRect());
+    }
+
     public void draw(Canvas canvas) {
         canvas.drawBitmap(bitmap, x, y, null);
     }

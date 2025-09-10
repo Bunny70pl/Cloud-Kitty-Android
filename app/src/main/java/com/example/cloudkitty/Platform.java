@@ -20,9 +20,11 @@ public class Platform {
     private int width, height;
     private boolean visible = true;
     private boolean isGround = false;
-    private float direction = 1; // dla MOVING
+    private float direction = 1;
 
     private long destroyedAt = 0;
+
+    private boolean passed = false; // czy gracz już przeskoczył platformę
 
     public Platform(Context context, float x, float y, int width, int height) {
         this(x, y, width, height, NORMAL, false, context);
@@ -81,6 +83,7 @@ public class Platform {
     public void respawn() {
         visible = true;
         destroyedAt = 0;
+        passed = false;
     }
 
     public int getType() { return type; }
@@ -89,5 +92,7 @@ public class Platform {
     public float getY() { return y; }
     public void setY(float y) { this.y = y; }
     public boolean isGround() { return isGround; }
-    public long getDestroyedAt() { return destroyedAt; }
+
+    public boolean isPassed() { return passed; }
+    public void setPassed(boolean passed) { this.passed = passed; }
 }

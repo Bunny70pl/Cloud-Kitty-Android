@@ -11,42 +11,32 @@ public class Platform {
     public static final int MOVING = 1;
     public static final int SPRING = 2;
     public static final int BREAKABLE = 3;
-
-    public static final long RESPAWN_TIME = 10000; // 10 sekund
+    public static final int KILLER = 4;
 
     private Bitmap bitmap;
     private float x, y;
     private int type;
     private int width, height;
     private boolean visible = true;
-    private boolean isGround = false;
     private float direction = 1;
+    private boolean passed = false;
 
     private long destroyedAt = 0;
-
-    private boolean passed = false; // czy gracz już przeskoczył platformę
-
-    public Platform(Context context, float x, float y, int width, int height) {
-        this(x, y, width, height, NORMAL, false, context);
-    }
+    public static final long RESPAWN_TIME = 10000;
 
     public Platform(Context context, float x, float y, int width, int height, int type, boolean isGround) {
-        this(x, y, width, height, type, isGround, context);
-    }
-
-    private Platform(float x, float y, int width, int height, int type, boolean isGround, Context context) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.type = type;
-        this.isGround = isGround;
 
         int resId;
         switch (type) {
             case MOVING: resId = R.drawable.cloud_moving; break;
             case SPRING: resId = R.drawable.cloud_spring; break;
             case BREAKABLE: resId = R.drawable.cloud_breakable; break;
+            case KILLER: resId = R.drawable.cloud_kill; break;
             default: resId = R.drawable.cloud; break;
         }
 
@@ -55,15 +45,13 @@ public class Platform {
     }
 
     public void update(int screenWidth) {
-        if (!visible && type == BREAKABLE) {
-            if (System.currentTimeMillis() - destroyedAt >= RESPAWN_TIME) {
-                visible = true;
-            }
-        }
-
         if (type == MOVING && visible) {
             x += 5 * direction;
             if (x < 0 || x + width > screenWidth) direction *= -1;
+        }
+
+        if (!visible && type == BREAKABLE) {
+            if (System.currentTimeMillis() - destroyedAt >= RESPAWN_TIME) visible = true;
         }
     }
 
@@ -80,19 +68,10 @@ public class Platform {
         destroyedAt = System.currentTimeMillis();
     }
 
-    public void respawn() {
-        visible = true;
-        destroyedAt = 0;
-        passed = false;
-    }
-
-    public int getType() { return type; }
     public boolean isVisible() { return visible; }
-    public float getX() { return x; }
     public float getY() { return y; }
     public void setY(float y) { this.y = y; }
-    public boolean isGround() { return isGround; }
-
+    public int getType() { return type; }
     public boolean isPassed() { return passed; }
     public void setPassed(boolean passed) { this.passed = passed; }
 }

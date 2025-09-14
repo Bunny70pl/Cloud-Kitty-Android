@@ -15,27 +15,33 @@ public class Player {
     private boolean movingRight = false;
 
     public Player(Context context, float x, float y) {
-        this.bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.cat);
+        Bitmap original = BitmapFactory.decodeResource(context.getResources(), R.drawable.cat_red);
+        this.bitmap = Bitmap.createScaledBitmap(original, 300, 250, false);
         this.x = x;
         this.y = y;
         this.velocityY = 0;
     }
 
     public void update(ArrayList<Platform> platforms, int screenHeight, int screenWidth) {
-        velocityY += 1.5f;
+        velocityY += 1.5f; // grawitacja
         y += velocityY;
 
         if (movingLeft) x -= 15;
         if (movingRight) x += 15;
 
+        // ograniczenie w osi X
         if (x < 0) x = 0;
         if (x > screenWidth - bitmap.getWidth()) x = screenWidth - bitmap.getWidth();
 
+        boolean landed = false;
+
         for (Platform p : platforms) {
             if (isLandingOn(p)) {
-                velocityY = -57;
+                velocityY = -57; // standardowy skok
                 y = p.getY() - bitmap.getHeight();
+                landed = true;
 
+                // bonusy na platformach
                 if (p.getType() == Platform.SPRING) velocityY = -100;
                 if (p.getType() == Platform.BREAKABLE) p.destroy();
 
@@ -43,36 +49,47 @@ public class Player {
             }
         }
 
-        if (y > screenHeight - bitmap.getHeight()) {
-            y = screenHeight - bitmap.getHeight();
+        // Jeśli nie wylądował na platformie, ale jest poniżej ziemi, ustaw na ziemi
+        float groundY = screenHeight - 120 - bitmap.getHeight();
+        if (!landed && y > groundY) {
+            y = groundY;
             velocityY = 0;
         }
+    }
+
+    // Poprawiony hitbox - bardziej dopasowany do kota
+    private Rect getRect() {
+        int paddingX = 30;
+        int paddingTop = 10;
+        int paddingBottom = 5;
+        return new Rect(
+                (int)x + paddingX,
+                (int)y + paddingTop,
+                (int)x + bitmap.getWidth() - paddingX,
+                (int)y + bitmap.getHeight() - paddingBottom
+        );
     }
 
     public boolean isLandingOn(Platform p) {
         Rect playerRect = getRect();
         Rect platRect = p.getRect();
+
         boolean falling = velocityY > 0;
         boolean horizontallyOverlaps = playerRect.right > platRect.left && playerRect.left < platRect.right;
-        boolean verticallyTouching = playerRect.bottom >= platRect.top && playerRect.bottom - velocityY < platRect.top;
-        return falling && horizontallyOverlaps && verticallyTouching && p.isVisible();
-    }
+        boolean verticallyTouching = playerRect.bottom >= platRect.top && playerRect.bottom - velocityY <= platRect.top + 5;
 
-    public boolean isStandingOn(Platform p) {
-        Rect playerRect = new Rect((int)x, (int)(y + bitmap.getHeight()), (int)(x + bitmap.getWidth()), (int)(y + bitmap.getHeight() + 5));
-        return p.isVisible() && Rect.intersects(playerRect, p.getRect());
+        return falling && horizontallyOverlaps && verticallyTouching && p.isVisible();
     }
 
     public void draw(Canvas canvas) {
         canvas.drawBitmap(bitmap, x, y, null);
     }
 
-    private Rect getRect() {
-        return new Rect((int)x, (int)y, (int)x + bitmap.getWidth(), (int)y + bitmap.getHeight());
-    }
+    public void setMovingLeft(boolean movingLeft) { this.movingLeft = movingLeft; }
+    public void setMovingRight(boolean movingRight) { this.movingRight = movingRight; }
 
     public float getY() { return y; }
     public void setY(float y) { this.y = y; }
-    public void setMovingLeft(boolean movingLeft) { this.movingLeft = movingLeft; }
-    public void setMovingRight(boolean movingRight) { this.movingRight = movingRight; }
+
+    public void setVelocityY(float velocityY) { this.velocityY = velocityY; }
 }

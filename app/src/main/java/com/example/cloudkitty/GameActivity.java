@@ -38,6 +38,20 @@ public class GameActivity extends AppCompatActivity {
                 break;
         }
 
+        if (gameView.isGameOver()) {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (touchX < gameView.getWidth() / 2) {
+                    // restart gry
+                    gameView.restartGame();
+                } else {
+                    // powrót do menu
+                    finish(); // zamyka GameActivity → wraca do MainActivity (menu główne)
+                }
+            }
+            return true;
+        }
+
+
         return true;
     }
 }

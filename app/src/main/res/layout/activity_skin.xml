@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:padding="16dp"
+    android:background="#B3E5FC">
+
+    <ImageButton
+        android:id="@+id/btn_red"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/cat_red"
+        android:layout_marginBottom="20dp"
+        android:background="@null"/>
+
+    <ImageButton
+        android:id="@+id/btn_white"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/cat_white"
+        android:layout_marginBottom="20dp"
+        android:background="@null"/>
+
+    <ImageButton
+        android:id="@+id/btn_black"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/cat_black"
+        android:layout_marginBottom="20dp"
+        android:background="@null"/>
+
+    <Button
+        android:id="@+id/btn_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Powrót"/>
+
+</LinearLayout>

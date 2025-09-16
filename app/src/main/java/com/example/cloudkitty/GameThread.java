@@ -9,15 +9,14 @@ public class GameThread extends Thread {
     private final GameView gameView;
 
     public GameThread(SurfaceHolder holder, GameView view) {
-        this.holder = holder;
-        this.gameView = view;
+        this.holder = holder; this.gameView = view;
     }
 
     public void setRunning(boolean running) { this.running = running; }
 
     @Override
     public void run() {
-        while (running) {
+        while(running) {
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -21,12 +22,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private Random random;
     private int screenHeight, screenWidth;
     private int score = 0;
-
     private boolean isGameOver = false;
 
     private Platform killerCloud;
     private long lastKillerSpawn = 0;
-    private static final long KILLER_SPAWN_INTERVAL = 11000; // co 11 sek.
+    private static final long KILLER_SPAWN_INTERVAL = 11000;
+
+    // hamburger menu
+    private Rect menuButtonRect;
+    private boolean menuOpen = false;
+    private Paint menuPaint;
 
     public GameView(Context context) {
         super(context);
@@ -34,23 +39,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         thread = new GameThread(getHolder(), this);
         platforms = new ArrayList<>();
         random = new Random();
-
-        screenHeight = 1920;
-        screenWidth = 1080;
-
-        initGameObjects();
         setFocusable(true);
     }
 
     private void initGameObjects() {
-        // Gracz startuje tuż nad ziemią
-        player = new Player(getContext(), screenWidth / 2f, screenHeight - 220);
-        player.setVelocityY(0);
+        screenHeight = getHeight();
+        screenWidth = getWidth();
 
-        // Platformy
+        player = new Player(getContext(), screenWidth / 2f, screenHeight - 220);
+
         platforms.clear();
         int baseY = screenHeight - 120;
-        int spacing = 250;
+        int spacing = 300; // większy odstęp początkowych platform
 
         for (int i = 1; i < 7; i++) {
             int type = random.nextInt(4);
@@ -59,19 +59,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             platforms.add(new Platform(getContext(), x, y, 250, 150, type, false));
         }
 
-        // Ziemia
-        platforms.add(new Platform(getContext(), 0, screenHeight - 120, screenWidth, 150, 0, true));
-
-        // Zabójcza chmura
+        platforms.add(new Platform(getContext(), 0, screenHeight - 120, screenWidth, 150, Platform.NORMAL, true));
         spawnKillerCloud();
     }
 
     private void spawnKillerCloud() {
         float x = random.nextInt(screenWidth - 200);
         float minPlatformY = Float.MAX_VALUE;
-        for (Platform p : platforms) {
-            if (p.getY() < minPlatformY) minPlatformY = p.getY();
-        }
+        for (Platform p : platforms) if (p.getY() < minPlatformY) minPlatformY = p.getY();
         float y = minPlatformY - (random.nextInt(200) + 200);
         killerCloud = new Platform(getContext(), x, y, 250, 150, Platform.KILLER, false);
         lastKillerSpawn = System.currentTimeMillis();
@@ -79,10 +74,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        screenHeight = getHeight();
-        screenWidth = getWidth();
-        score = 0;
-        isGameOver = false;
         initGameObjects();
         thread.setRunning(true);
         thread.start();
@@ -116,23 +107,46 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         canvas.drawText("Score: " + score, 50, 100, textPaint);
         canvas.drawText("High Score: " + getHighScore(), 50, 200, textPaint);
 
-        if (isGameOver) {
+        // hamburger menu
+        if(menuPaint == null){
+            menuPaint = new Paint();
+            menuPaint.setColor(Color.BLACK);
+            menuPaint.setStrokeWidth(10);
+        }
+        int left = screenWidth - 150;
+        int top = 50;
+        int width = 100;
+        int height = 60;
+        menuButtonRect = new Rect(left, top, left + width, top + height);
+        canvas.drawLine(left, top, left + width, top, menuPaint);
+        canvas.drawLine(left, top + 20, left + width, top + 20, menuPaint);
+        canvas.drawLine(left, top + 40, left + width, top + 40, menuPaint);
+
+        if(menuOpen){
+            Paint bg = new Paint();
+            bg.setColor(Color.WHITE);
+            bg.setAlpha(230);
+            canvas.drawRect(screenWidth/4f, screenHeight/4f, screenWidth*3/4f, screenHeight*3/4f, bg);
+
+            Paint option = new Paint();
+            option.setColor(Color.BLACK);
+            option.setTextSize(64);
+            canvas.drawText("Wybierz skina", screenWidth/4f + 50, screenHeight/4f + 100, option);
+            canvas.drawText("Wróć do gry", screenWidth/4f + 50, screenHeight/4f + 200, option);
+            canvas.drawText("Wyjdź", screenWidth/4f + 50, screenHeight/4f + 300, option);
+        }
+
+        if(isGameOver){
             Paint paint = new Paint();
             paint.setColor(Color.RED);
             paint.setTextSize(120);
             paint.setAntiAlias(true);
-            canvas.drawText("GAME OVER", screenWidth / 4f, screenHeight / 2f, paint);
-
-            Paint small = new Paint();
-            small.setColor(Color.BLACK);
-            small.setTextSize(64);
-            canvas.drawText("Tap LEFT = Restart", screenWidth / 6f, screenHeight / 2f + 150, small);
-            canvas.drawText("Tap RIGHT = Menu", screenWidth / 6f, screenHeight / 2f + 250, small);
+            canvas.drawText("GAME OVER", screenWidth / 8f, screenHeight / 2f, paint);
         }
     }
 
     public void update() {
-        if (isGameOver) return;
+        if (isGameOver || menuOpen) return;
 
         player.update(platforms, screenHeight, screenWidth);
 
@@ -154,10 +168,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             if (killerCloud != null) killerCloud.setY(killerCloud.getY() - diff);
         }
 
-        // Generowanie nowych platform w górę
         float minY = Float.MAX_VALUE;
         for (Platform p : platforms) if (p.getY() < minY) minY = p.getY();
-        while (minY > -500) {
+        while(minY > -500){
             int type = random.nextInt(4);
             float newX = random.nextInt(screenWidth - 200);
             float newY = minY - (random.nextInt(700) + 300);
@@ -165,83 +178,86 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             minY = newY;
         }
 
-        // Punktacja
-        for (Platform p : platforms) {
-            if (!p.isPassed() && player.getY() + 100 < p.getY()) {
+        for(Platform p : platforms){
+            if(!p.isPassed() && player.getY() + 100 < p.getY()){
                 score += 10;
                 p.setPassed(true);
             }
         }
 
-        // Kolizja z platformami
         boolean onPlatform = false;
-        for (Platform p : platforms) {
-            if (player.isLandingOn(p)) {
-                player.setY(p.getY() - getPlayerHeight());
+        for(Platform p : platforms){
+            if(player.isLandingOn(p)){
+                player.setY(p.getY() - 100);
                 player.setVelocityY(0);
                 onPlatform = true;
                 break;
             }
         }
 
-        float groundY = screenHeight - 120 - getPlayerHeight();
-        if (!onPlatform && player.getY() >= groundY) {
+        float groundY = screenHeight - 120 - 100;
+        if(!onPlatform && player.getY() >= groundY){
             player.setY(groundY);
             player.setVelocityY(0);
         }
 
-        // Kolizja z zabójczą chmurą
-        if (killerCloud != null && player.isLandingOn(killerCloud)) {
-            isGameOver = true;
-        }
-
+        if(killerCloud != null && player.isLandingOn(killerCloud)) isGameOver = true;
         saveHighScore();
 
-        if (System.currentTimeMillis() - lastKillerSpawn > KILLER_SPAWN_INTERVAL) {
+        if(System.currentTimeMillis() - lastKillerSpawn > KILLER_SPAWN_INTERVAL){
             spawnKillerCloud();
         }
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        float xTouch = event.getX();
+    public boolean onTouchEvent(MotionEvent event){
+        float x = event.getX();
+        float y = event.getY();
 
-        switch (event.getAction()) {
+        switch(event.getAction()){
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
-                if (isGameOver) {
-                    if (xTouch < screenWidth / 2f) {
-                        // reset gry
-                        restartGame();
-                        return true;
-                    } else {
-                        // menu
-                        Context context = getContext();
-                        Intent intent = new Intent(context, MenuActivity.class);
-                        context.startActivity(intent);
-                        if (context instanceof Activity) ((Activity) context).finish();
-                        return true;
-                    }
+                if(menuButtonRect.contains((int)x, (int)y)){
+                    menuOpen = !menuOpen;
+                    return true;
                 }
 
-                if (xTouch < screenWidth / 2f) player.setMovingLeft(true);
-                else player.setMovingRight(true);
+                if(menuOpen){
+                    if(y > screenHeight/4f + 50 && y < screenHeight/4f + 150){
+                        Context context = getContext();
+                        Intent intent = new Intent(context, SkinActivity.class);
+                        context.startActivity(intent);
+                        if(context instanceof Activity) ((Activity)context).finish();
+                    } else if(y > screenHeight/4f + 150 && y < screenHeight/4f + 250){
+                        menuOpen = false;
+                    } else if(y > screenHeight/4f + 250 && y < screenHeight/4f + 350){
+                        if(getContext() instanceof Activity) ((Activity)getContext()).finish();
+                    }
+                    return true;
+                }
+
+                if(x < screenWidth/2f){
+                    movePlayerLeft(true);
+                    movePlayerRight(false);
+                } else {
+                    movePlayerRight(true);
+                    movePlayerLeft(false);
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
-                player.setMovingLeft(false);
-                player.setMovingRight(false);
+                movePlayerLeft(false);
+                movePlayerRight(false);
                 break;
         }
         return true;
     }
 
-    public void movePlayerLeft(boolean moving) { player.setMovingLeft(moving); }
-    public void movePlayerRight(boolean moving) { player.setMovingRight(moving); }
+    public void movePlayerLeft(boolean moving){ player.setMovingLeft(moving); }
+    public void movePlayerRight(boolean moving){ player.setMovingRight(moving); }
 
-    private void saveHighScore() {
+    private void saveHighScore(){
         int highScore = getHighScore();
-        if (score > highScore) {
+        if(score > highScore){
             getContext().getSharedPreferences("game_prefs", Context.MODE_PRIVATE)
                     .edit()
                     .putInt("high_score", score)
@@ -249,18 +265,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    private int getHighScore() {
+    private int getHighScore(){
         return getContext().getSharedPreferences("game_prefs", Context.MODE_PRIVATE)
                 .getInt("high_score", 0);
     }
 
-    private int getPlayerHeight() { return 100; }
-
-    public boolean isGameOver() { return isGameOver; }
-
-    public void restartGame() {
+    public void restartGame(){
         score = 0;
         isGameOver = false;
         initGameObjects();
     }
+
+    public void reloadPlayerSkin(){
+        if(player != null){
+            float px = player.getX();
+            float py = player.getY();
+            player = new Player(getContext(), px, py);
+        }
+    }
+
+    public boolean isGameOver(){ return isGameOver; }
 }

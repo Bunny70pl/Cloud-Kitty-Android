@@ -7,11 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 
 public class Platform {
-    public static final int NORMAL = 0;
-    public static final int MOVING = 1;
-    public static final int SPRING = 2;
-    public static final int BREAKABLE = 3;
-    public static final int KILLER = 4;
+    public static final int NORMAL = 0, MOVING = 1, SPRING = 2, BREAKABLE = 3, KILLER = 4;
 
     private Bitmap bitmap;
     private float x, y;
@@ -24,15 +20,11 @@ public class Platform {
     private long destroyedAt = 0;
     public static final long RESPAWN_TIME = 10000;
 
-    public Platform(Context context, float x, float y, int width, int height, int type, boolean isGround) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.type = type;
+    public Platform(Context context, float x, float y, int width, int height, int type, boolean isGround){
+        this.x = x; this.y = y; this.width = width; this.height = height; this.type = type;
 
         int resId;
-        switch (type) {
+        switch(type){
             case MOVING: resId = R.drawable.cloud_moving; break;
             case SPRING: resId = R.drawable.cloud_spring; break;
             case BREAKABLE: resId = R.drawable.cloud_breakable; break;
@@ -44,34 +36,29 @@ public class Platform {
         this.bitmap = Bitmap.createScaledBitmap(original, width, height, false);
     }
 
-    public void update(int screenWidth) {
-        if (type == MOVING && visible) {
-            x += 5 * direction;
-            if (x < 0 || x + width > screenWidth) direction *= -1;
+    public void update(int screenWidth){
+        if(type == MOVING && visible){
+            x += 5*direction;
+            if(x < 0 || x + width > screenWidth) direction *= -1;
         }
 
-        if (!visible && type == BREAKABLE) {
-            if (System.currentTimeMillis() - destroyedAt >= RESPAWN_TIME) visible = true;
+        if(!visible && type == BREAKABLE){
+            if(System.currentTimeMillis() - destroyedAt >= RESPAWN_TIME) visible = true;
         }
     }
 
-    public void draw(Canvas canvas) {
-        if (visible) canvas.drawBitmap(bitmap, x, y, null);
+    public void draw(Canvas canvas){
+        if(visible) canvas.drawBitmap(bitmap, x, y, null);
     }
 
-    public Rect getRect() {
-        return new Rect((int)x, (int)y, (int)x + width, (int)y + height);
-    }
+    public Rect getRect(){ return new Rect((int)x,(int)y,(int)x+width,(int)y+height); }
 
-    public void destroy() {
-        visible = false;
-        destroyedAt = System.currentTimeMillis();
-    }
+    public void destroy(){ visible = false; destroyedAt = System.currentTimeMillis(); }
 
-    public boolean isVisible() { return visible; }
-    public float getY() { return y; }
-    public void setY(float y) { this.y = y; }
-    public int getType() { return type; }
-    public boolean isPassed() { return passed; }
-    public void setPassed(boolean passed) { this.passed = passed; }
+    public boolean isVisible(){ return visible; }
+    public float getY(){ return y; }
+    public void setY(float y){ this.y = y; }
+    public int getType(){ return type; }
+    public boolean isPassed(){ return passed; }
+    public void setPassed(boolean passed){ this.passed = passed; }
 }

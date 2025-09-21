@@ -1,6 +1,7 @@
 package com.example.cloudkitty;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,10 +12,13 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // wymuszenie pionowej orientacji
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
         gameView = new GameView(this);
         setContentView(gameView);
     }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return gameView.onTouchEvent(event);

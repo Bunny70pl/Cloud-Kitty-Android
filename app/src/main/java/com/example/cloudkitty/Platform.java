@@ -51,7 +51,16 @@ public class Platform {
         if(visible) canvas.drawBitmap(bitmap, x, y, null);
     }
 
-    public Rect getRect(){ return new Rect((int)x,(int)y,(int)x+width,(int)y+height); }
+    public Rect getRect(){
+        int padX = (int)(width * 0.05f); // 5% szerokości
+        int padY = (int)(height * 0.1f); // 10% wysokości
+        return new Rect(
+                (int)x + padX,
+                (int)y + padY,
+                (int)x + width - padX,
+                (int)y + height - padY
+        );
+    }
 
     public void destroy(){ visible = false; destroyedAt = System.currentTimeMillis(); }
 

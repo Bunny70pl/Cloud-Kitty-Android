@@ -13,6 +13,7 @@ import android.view.SurfaceView;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.ConsoleHandler;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -45,7 +46,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private void initGameObjects() {
         screenHeight = getHeight();
         screenWidth = getWidth();
-
         player = new Player(getContext(), screenWidth / 2f, screenHeight - 220);
 
         platforms.clear();
@@ -94,12 +94,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
+
+        // tło
         canvas.drawColor(Color.rgb(138, 235, 241));
 
+        // rysowanie platform
         for (Platform p : platforms) p.draw(canvas);
+
+        // killer cloud
         if (killerCloud != null) killerCloud.draw(canvas);
+
+        // gracz
         player.draw(canvas);
 
+        // tekst wyniku
         Paint textPaint = new Paint();
         textPaint.setColor(Color.BLACK);
         textPaint.setTextSize(64);
@@ -122,6 +130,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         canvas.drawLine(left, top + 20, left + width, top + 20, menuPaint);
         canvas.drawLine(left, top + 40, left + width, top + 40, menuPaint);
 
+        // menu opcje
         if(menuOpen){
             Paint bg = new Paint();
             bg.setColor(Color.WHITE);
@@ -136,14 +145,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             canvas.drawText("Wyjdź", screenWidth/4f + 50, screenHeight/4f + 300, option);
         }
 
+        // Game Over - wyśrodkowane
         if(isGameOver){
             Paint paint = new Paint();
             paint.setColor(Color.RED);
             paint.setTextSize(120);
             paint.setAntiAlias(true);
-            canvas.drawText("GAME OVER", screenWidth / 8f, screenHeight / 2f, paint);
+
+            String text = "GAME OVER";
+            float textWidth = paint.measureText(text);
+            float x = (screenWidth - textWidth) / 2f;
+
+            Paint.FontMetrics fm = paint.getFontMetrics();
+            float y = (screenHeight - (fm.ascent + fm.descent)) / 2f;
+
+            canvas.drawText(text, x, y, paint);
         }
     }
+
 
     public void update() {
         if (isGameOver || menuOpen) return;
@@ -216,6 +235,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         switch(event.getAction()){
             case MotionEvent.ACTION_DOWN:
+                // jeśli game over
+                if(isGameOver){
+                    if(x < screenWidth / 2f){
+                        // lewa połowa ekranu -> restart gry
+                        restartGame();
+                    } else {
+                        // prawa połowa ekranu -> otwórz menu
+                        menuOpen = true;
+                    }
+                    return true;
+                }
+
+                // obsługa hamburger menu
                 if(menuButtonRect.contains((int)x, (int)y)){
                     menuOpen = !menuOpen;
                     return true;
@@ -235,6 +267,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                     return true;
                 }
 
+                // sterowanie lewo/prawo
                 if(x < screenWidth/2f){
                     movePlayerLeft(true);
                     movePlayerRight(false);
@@ -251,6 +284,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
         return true;
     }
+
 
     public void movePlayerLeft(boolean moving){ player.setMovingLeft(moving); }
     public void movePlayerRight(boolean moving){ player.setMovingRight(moving); }

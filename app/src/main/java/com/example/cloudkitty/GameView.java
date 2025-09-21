@@ -59,7 +59,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             platforms.add(new Platform(getContext(), x, y, 250, 150, type, false));
         }
 
-        platforms.add(new Platform(getContext(), 0, screenHeight - 120, screenWidth, 150, Platform.NORMAL, true));
+        platforms.add(new Platform(getContext(), 0, screenHeight - 120, screenWidth, 450, Platform.GROUND, true));
         spawnKillerCloud();
     }
 

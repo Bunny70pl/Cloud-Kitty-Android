@@ -7,7 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 
 public class Platform {
-    public static final int NORMAL = 0, MOVING = 1, SPRING = 2, BREAKABLE = 3, KILLER = 4;
+    public static final int NORMAL = 0, MOVING = 1, SPRING = 2, BREAKABLE = 3, KILLER = 4, GROUND = 5;
 
     private Bitmap bitmap;
     private float x, y;
@@ -29,6 +29,7 @@ public class Platform {
             case SPRING: resId = R.drawable.cloud_spring; break;
             case BREAKABLE: resId = R.drawable.cloud_breakable; break;
             case KILLER: resId = R.drawable.cloud_kill; break;
+            case GROUND: resId = R.drawable.ground; break;
             default: resId = R.drawable.cloud; break;
         }
 
